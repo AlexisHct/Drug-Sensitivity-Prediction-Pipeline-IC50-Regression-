@@ -4,6 +4,7 @@ data/
 *.joblib
 *.tar.gz
 *.zip
+*.parquet
 
 # Environnement virtuel et cache
 __pycache__/
