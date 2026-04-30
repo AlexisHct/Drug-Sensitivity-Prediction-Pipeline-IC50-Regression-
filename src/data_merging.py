@@ -54,7 +54,7 @@ def merge_datasets(drugs_path, targets_path, expr_path, output_path):
 if __name__ == "__main__":
     DRUGS_FILE = "data/processed/drug_features.parquet"
     TARGETS_FILE = "data/processed/target_clean.parquet"
-    EXPR_PATH = "data/processed/cell_line_expression.parquet"
+    EXPR_PATH = "data/processed/cell_line_pca.parquet"
     OUTPUT_FILE = "data/processed/master_dataset.parquet"
     
     merge_datasets(DRUGS_FILE, TARGETS_FILE, EXPR_PATH, OUTPUT_FILE)

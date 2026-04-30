@@ -33,11 +33,11 @@ def train_drug_prediction_model(data_path, model_output_path, experiment_name = 
         # 2. Préparation des Features (X) et de la Cible (y)
         # On exclut les colonnes d'identification et les métadonnées
         # On garde tout ce qui commence par 'bit_', 'PC_', et nos descripteurs chimiques
-        cols_to_exclude = ['DRUG_ID', 'DRUG_NAME', 'CELL_LINE_NAME', 'SANGER_MODEL_ID', 
+        cols_to_exclude = ['TARGET', 'DRUG_ID', 'DRUG_NAME', 'CELL_LINE_NAME', 'SANGER_MODEL_ID', 
                         'ModelID', 'CellLineName', 'LN_IC50', 'AUC', 'RMSE', 'smiles', 'pIC50']
         
         X = df.drop(columns=[c for c in cols_to_exclude if c in df.columns])
-        y = df['pIC50']
+        y = df['pIC50'].astype(float)
         
         print(f"Nombre de features utilisées : {X.shape[1]}")
         print(X.columns)

@@ -14,6 +14,7 @@ from sklearn.preprocessing import StandardScaler
 
 def apply_pca_to_expression(input_path, output_path, n_components=50):
     df = pd.read_parquet(input_path)
+    
     # On sépare les IDs des données numériques (les gènes)
     # On suppose que les gènes sont toutes les colonnes sauf les IDs
     id_cols = ['SANGER_MODEL_ID', 'CELL_LINE_NAME']
