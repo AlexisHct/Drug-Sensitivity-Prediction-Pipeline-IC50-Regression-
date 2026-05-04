@@ -5,6 +5,7 @@ data/
 *.tar.gz
 *.zip
 *.parquet
+*.pkl
 
 # Environnement virtuel et cache
 __pycache__/
