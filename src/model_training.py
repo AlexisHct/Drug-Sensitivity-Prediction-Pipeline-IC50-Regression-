@@ -20,7 +20,7 @@ import joblib
 import tempfile
 import os
 
-def train_drug_prediction_model(data_path, model_output_path, experiment_name = "Drug_IC50_prediction"):
+def train_drug_prediction_model(data_path, model_output_path, X_test_path, y_test_path, meta_data_test_path, experiment_name = "Drug_IC50_prediction"):
     mlflow.set_experiment(experiment_name)
     
     with mlflow.start_run():
@@ -33,7 +33,7 @@ def train_drug_prediction_model(data_path, model_output_path, experiment_name = 
         # 2. Préparation des Features (X) et de la Cible (y)
         # On exclut les colonnes d'identification et les métadonnées
         # On garde tout ce qui commence par 'bit_', 'PC_', et nos descripteurs chimiques
-        cols_to_exclude = ['TARGET', 'DRUG_ID', 'DRUG_NAME', 'CELL_LINE_NAME', 'SANGER_MODEL_ID', 
+        cols_to_exclude = ['TARGET', 'DRUG_ID', 'DRUG_NAME', 'CANCER_TYPE', 'CELL_LINE_NAME', 'SANGER_MODEL_ID', 
                         'ModelID', 'CellLineName', 'LN_IC50', 'AUC', 'RMSE', 'smiles', 'pIC50']
         
         X = df.drop(columns=[c for c in cols_to_exclude if c in df.columns])
@@ -73,32 +73,58 @@ def train_drug_prediction_model(data_path, model_output_path, experiment_name = 
             callbacks=[lgb.early_stopping(stopping_rounds=50)]
         )
 
-        # 6. Évaluation
-        y_pred = model.predict(X_test)
+        # 6. Évaluation train
+        y_pred_train = model.predict(X_train)
         
-        rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-        r2 = r2_score(y_test, y_pred)
-        mae = mean_absolute_error(y_test, y_pred)
+        rmse = np.sqrt(mean_squared_error(y_train, y_pred_train))
+        r2 = r2_score(y_train, y_pred_train)
+        mae = mean_absolute_error(y_train, y_pred_train)
 
         print("\n--- RÉSULTATS ---")
-        print(f"R² Score : {r2:.4f}  (Plus proche de 1 est mieux)")
-        print(f"RMSE     : {rmse:.4f} (Erreur moyenne en unités pIC50)")
-        print(f"MAE      : {mae:.4f}")
+        print(f"R² Score train : {r2:.4f}  (Plus proche de 1 est mieux)")
+        print(f"RMSE train     : {rmse:.4f} (Erreur moyenne en unités pIC50)")
+        print(f"MAE train      : {mae:.4f}")
 
-        mlflow.log_metric("rmse", rmse)
-        mlflow.log_metric("r2", r2)
-        mlflow.log_metric("mae", mae)
+        mlflow.log_metric("rmse train", rmse)
+        mlflow.log_metric("r2 train", r2)
+        mlflow.log_metric("mae train", mae)
+
+        # 6. Évaluation test
+        y_pred_test = model.predict(X_test)
+        
+        rmse = np.sqrt(mean_squared_error(y_test, y_pred_test))
+        r2 = r2_score(y_test, y_pred_test)
+        mae = mean_absolute_error(y_test, y_pred_test)
+
+        print("\n--- RÉSULTATS ---")
+        print(f"R² Score test : {r2:.4f}  (Plus proche de 1 est mieux)")
+        print(f"RMSE test     : {rmse:.4f} (Erreur moyenne en unités pIC50)")
+        print(f"MAE test      : {mae:.4f}")
+
+        mlflow.log_metric("rmse test", rmse)
+        mlflow.log_metric("r2 test", r2)
+        mlflow.log_metric("mae test", mae)
 
         # 7. Sauvegarde du modèle et des features
         joblib.dump(model, model_output_path)
         # Important : on sauvegarde la liste des colonnes pour les futures prédictions
         joblib.dump(X.columns.tolist(), "models/model_features_list.pkl")
         
+        X_test.to_parquet(X_test_path)
+        y_test.to_frame().to_parquet(y_test_path)
+
+        cols_to_keep = ['TARGET', 'SMILES', 'DRUG_NAME', 'CELL_LINE_NAME', 'CANCER_TYPE']
+
+        metadata_cols = [c for c in cols_to_keep if c in df.columns]
+        metadata_test = df.loc[X_test.index, metadata_cols]
+
+        metadata_test.to_parquet(meta_data_test_path)
+
         print(f"\nModèle sauvegardé sous : {model_output_path}")
 
         # 8. Visualisation rapide (Prediction vs Reality)
         plt.figure(figsize=(10, 6))
-        plt.scatter(y_test, y_pred, alpha=0.3, color='darkred') # Bordeaux power
+        plt.scatter(y_test, y_pred_test, alpha=0.3, color='darkred') # Bordeaux power
         plt.plot([y.min(), y.max()], [y.min(), y.max()], 'k--', lw=2)
         plt.xlabel('Vérité Terrain (pIC50)')
         plt.ylabel('Prédictions (pIC50)')
@@ -109,4 +135,7 @@ def train_drug_prediction_model(data_path, model_output_path, experiment_name = 
 if __name__ == "__main__":
     DATA_PATH = "data/processed/master_dataset.parquet"
     MODEL_PATH = "models/drug_predictor_model.pkl"
-    train_drug_prediction_model(DATA_PATH, MODEL_PATH)
+    X_TEST_PATH = "data/processed/X_test.parquet"
+    Y_TEST_PATH = "data/processed/y_test.parquet"
+    METADATA_TEST_PATH = "data/processed/metadata_test.parquet"
+    train_drug_prediction_model(DATA_PATH, MODEL_PATH, X_TEST_PATH, Y_TEST_PATH, METADATA_TEST_PATH)

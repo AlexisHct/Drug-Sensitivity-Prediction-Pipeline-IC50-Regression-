@@ -15,17 +15,14 @@ import os
 def process_targets(input_path, output_path):
     print(f"--- Démarrage du Target Processing ---")
     
-    # 1. Chargement du fichier Excel
     if not os.path.exists(input_path):
         print(f"Erreur : Le fichier {input_path} est introuvable.")
         return
     
-    # On charge uniquement les colonnes utiles pour alléger la mémoire
-    cols_to_load = ['DRUG_ID', 'CELL_LINE_NAME', 'LN_IC50', 'AUC', 'RMSE']
+    cols_to_load = ['DRUG_ID', 'CELL_LINE_NAME', 'CANCER_TYPE', 'LN_IC50', 'AUC', 'RMSE']
     df = pd.read_excel(input_path, usecols=cols_to_load)
     print(f"Données chargées : {len(df)} mesures d'IC50.")
 
-    # 2. Nettoyage des données manquantes
     initial_count = len(df)
     df = df.dropna(subset=['LN_IC50', 'DRUG_ID']).reset_index(drop=True)
     print(f"Mesures valides après nettoyage des NaNs : {len(df)} / {initial_count}")

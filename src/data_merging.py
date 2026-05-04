@@ -11,11 +11,11 @@ the Free Software Foundation, either version 3 of the License, or
 import pandas as pd
 import os
 
-def merge_datasets(drugs_path, targets_path, expr_path, output_path):
+def merge_datasets(drugs_path, targets_path, pca_expr_path, output_path):
     print(f"--- Démarrage du Data Merging ---")
     
     # 1. Chargement des datasets
-    if not all(os.path.exists(p) for p in [drugs_path, targets_path, expr_path]):
+    if not all(os.path.exists(p) for p in [drugs_path, targets_path, pca_expr_path]):
         print("Erreur : L'un des fichiers d'entrée est introuvable.")
         return
     
@@ -25,8 +25,8 @@ def merge_datasets(drugs_path, targets_path, expr_path, output_path):
     print("Chargement des cibles (pIC50)...")
     df_targets = pd.read_parquet(targets_path)
 
-    print("Chargement des expressions géniques...")
-    df_expr = pd.read_parquet(expr_path)
+    print("Chargement des PCA des expressions géniques...")
+    df_expr = pd.read_parquet(pca_expr_path)
 
     # 2. La Fusion (Inner Join)
     print(f"Fusion des données sur DRUG_ID...")
