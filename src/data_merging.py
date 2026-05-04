@@ -14,7 +14,6 @@ import os
 def merge_datasets(drugs_path, targets_path, pca_expr_path, output_path):
     print(f"--- Démarrage du Data Merging ---")
     
-    # 1. Chargement des datasets
     if not all(os.path.exists(p) for p in [drugs_path, targets_path, pca_expr_path]):
         print("Erreur : L'un des fichiers d'entrée est introuvable.")
         return
@@ -28,23 +27,19 @@ def merge_datasets(drugs_path, targets_path, pca_expr_path, output_path):
     print("Chargement des PCA des expressions géniques...")
     df_expr = pd.read_parquet(pca_expr_path)
 
-    # 2. La Fusion (Inner Join)
     print(f"Fusion des données sur DRUG_ID...")
     final_df = pd.merge(df_targets, df_drugs, on='DRUG_ID', how='inner')
     final_df = pd.merge(final_df, df_expr, on='CELL_LINE_NAME', how='inner')
 
-    # 3. Vérification de la cohérence
     n_drugs_final = final_df['DRUG_ID'].nunique()
     print(f"Nombre de molécules uniques après fusion : {n_drugs_final}")
     print(f"Nombre total de couples (Drogue, Cellule) : {len(final_df)}")
 
-    # 4. Nettoyage des colonnes redondantes
     if 'smiles_y' in final_df.columns:
         final_df = final_df.drop(columns=['smiles_y']).rename(columns={'smiles_x': 'smiles'})
     if 'DRUG_NAME_y' in final_df.columns:
         final_df = final_df.drop(columns=['DRUG_NAME_y']).rename(columns={'DRUG_NAME_x': 'DRUG_NAME'})
 
-    # 5. Sauvegarde du Master Dataset
     print(f"Sauvegarde du dataset final ({final_df.shape[0]} lignes, {final_df.shape[1]} colonnes)...")
     final_df.to_parquet(output_path, compression='snappy', index=False)
     

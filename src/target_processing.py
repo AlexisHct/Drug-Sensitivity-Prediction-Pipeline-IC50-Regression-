@@ -27,14 +27,9 @@ def process_targets(input_path, output_path):
     df = df.dropna(subset=['LN_IC50', 'DRUG_ID']).reset_index(drop=True)
     print(f"Mesures valides après nettoyage des NaNs : {len(df)} / {initial_count}")
 
-    # 3. Conversion LN_IC50 -> pIC50
-    # Formule : 6 - (LN_IC50 / ln(10))
-    # Note : On suppose que l'IC50 d'origine est en micromolaire (standard GDSC)
     df['pIC50'] = 6 - (df['LN_IC50'] / np.log(10))
 
-    # 4. Filtrage de qualité (Optionnel mais recommandé)
-    # On peut filtrer les courbes avec un RMSE trop élevé (mauvaise qualité de fit)
-    threshold_rmse = 0.8 # Valeur à ajuster selon tes observations
+    threshold_rmse = 0.8 
     df_clean = df[df['RMSE'] < threshold_rmse].copy()
     print(f"Mesures conservées après filtre qualité (RMSE < {threshold_rmse}) : {len(df_clean)}")
 

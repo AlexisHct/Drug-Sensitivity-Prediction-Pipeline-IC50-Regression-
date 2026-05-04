@@ -26,13 +26,9 @@ def train_drug_prediction_model(data_path, model_output_path, X_test_path, y_tes
     with mlflow.start_run():
         print("--- Démarrage de l'entraînement du modèle ---")
         
-        # 1. Chargement du Master Dataset
         df = pd.read_parquet(data_path)
         print(f"Dataset chargé : {df.shape[0]} lignes, {df.shape[1]} colonnes.")
 
-        # 2. Préparation des Features (X) et de la Cible (y)
-        # On exclut les colonnes d'identification et les métadonnées
-        # On garde tout ce qui commence par 'bit_', 'PC_', et nos descripteurs chimiques
         cols_to_exclude = ['TARGET', 'DRUG_ID', 'DRUG_NAME', 'CANCER_TYPE', 'CELL_LINE_NAME', 'SANGER_MODEL_ID', 
                         'ModelID', 'CellLineName', 'LN_IC50', 'AUC', 'RMSE', 'smiles', 'pIC50']
         
@@ -41,12 +37,9 @@ def train_drug_prediction_model(data_path, model_output_path, X_test_path, y_tes
         
         print(f"Nombre de features utilisées : {X.shape[1]}")
         print(X.columns)
-        # 3. Split Train / Test
-        # On garde 20% des données pour tester la capacité de généralisation
+
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
         
-        # 4. Configuration de LightGBM
-        # On utilise des paramètres robustes pour commencer
         params = {
             'objective': 'regression',
             'metric': 'rmse',
@@ -57,7 +50,7 @@ def train_drug_prediction_model(data_path, model_output_path, X_test_path, y_tes
             'bagging_fraction': 0.8,
             'bagging_freq': 5,
             'verbose': -1,
-            'n_jobs': -1 # Utilise tous les cœurs de ton processeur
+            'n_jobs': -1 
         }
 
         mlflow.log_params(params)
@@ -73,7 +66,6 @@ def train_drug_prediction_model(data_path, model_output_path, X_test_path, y_tes
             callbacks=[lgb.early_stopping(stopping_rounds=50)]
         )
 
-        # 6. Évaluation train
         y_pred_train = model.predict(X_train)
         
         rmse = np.sqrt(mean_squared_error(y_train, y_pred_train))
@@ -89,7 +81,6 @@ def train_drug_prediction_model(data_path, model_output_path, X_test_path, y_tes
         mlflow.log_metric("r2 train", r2)
         mlflow.log_metric("mae train", mae)
 
-        # 6. Évaluation test
         y_pred_test = model.predict(X_test)
         
         rmse = np.sqrt(mean_squared_error(y_test, y_pred_test))
@@ -105,9 +96,7 @@ def train_drug_prediction_model(data_path, model_output_path, X_test_path, y_tes
         mlflow.log_metric("r2 test", r2)
         mlflow.log_metric("mae test", mae)
 
-        # 7. Sauvegarde du modèle et des features
         joblib.dump(model, model_output_path)
-        # Important : on sauvegarde la liste des colonnes pour les futures prédictions
         joblib.dump(X.columns.tolist(), "models/model_features_list.pkl")
         
         X_test.to_parquet(X_test_path)
@@ -122,9 +111,8 @@ def train_drug_prediction_model(data_path, model_output_path, X_test_path, y_tes
 
         print(f"\nModèle sauvegardé sous : {model_output_path}")
 
-        # 8. Visualisation rapide (Prediction vs Reality)
         plt.figure(figsize=(10, 6))
-        plt.scatter(y_test, y_pred_test, alpha=0.3, color='darkred') # Bordeaux power
+        plt.scatter(y_test, y_pred_test, alpha=0.3, color='darkred') 
         plt.plot([y.min(), y.max()], [y.min(), y.max()], 'k--', lw=2)
         plt.xlabel('Vérité Terrain (pIC50)')
         plt.ylabel('Prédictions (pIC50)')
